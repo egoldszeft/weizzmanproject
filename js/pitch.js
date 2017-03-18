@@ -8,11 +8,13 @@ var waveElem;
 var pitchCanvas;
 var pitchElem;
 var pitchValue;
+var lastPitch;
 var freqElem;
 var freqCanvas;
 var rafID;
 var pitchesBuffer = null;
 var pitchInterval = null;
+var accumulationInterval = 500;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -43,18 +45,26 @@ window.onload = function(){
 	pitchesBuffer = new samplesAccumulator();
 }
 
+function stopPlayback()
+{
+	if ( !( sourceNode instanceof MediaStreamAudioSourceNode ) )
+		sourceNode.stop( 0 );
+	else
+		sourceNode.disconnect();
+	
+	sourceNode = null;
+	analyser = null;
+	isPlaying = false;
+	if ( !window.cancelAnimationFrame )
+		window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
+	window.cancelAnimationFrame( rafID );
+	clearInterval(pitchInterval);	
+}
+
 function setPlayback( onoff ){
 	if ( isPlaying ){
-		sourceNode.stop( 0 );
-		sourceNode = null;
-		analyser = null;
-		isPlaying = false;
-		if ( !window.cancelAnimationFrame )
-			window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
-        window.cancelAnimationFrame( rafID );
-		clearInterval();
-        return "start";
-		
+		stopPlayback();
+        return "Play";
 	}
 	
 	sourceNode = audioContext.createBufferSource();
@@ -69,11 +79,64 @@ function setPlayback( onoff ){
 	isPlaying = true;
 	updateVisuals();
 
-	setInterval( ()=>{
+	pitchInterval = setInterval( ()=>{
 		pitchesBuffer.calcMean();
-	}, 1000);
+	}, accumulationInterval);
 	
-	return "stop";
+	return "Stop";
+}
+
+function getUserMedia(dictionary, callback) {
+    try {
+        navigator.getUserMedia = 
+        	navigator.getUserMedia ||
+        	navigator.webkitGetUserMedia ||
+        	navigator.mozGetUserMedia;
+        navigator.getUserMedia(dictionary, callback, ()=>{ 
+			alert('Failed to generate a stream.'); 
+			});
+    } catch (e) {
+        alert('getUserMedia threw exception :' + e);
+    }
+}
+
+function gotStream(stream) {
+    // Create an AudioNode from the stream.
+    mediaStreamSource = audioContext.createMediaStreamSource(stream);
+
+    // Connect it to the destination.
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    mediaStreamSource.connect( analyser );
+	sourceNode = mediaStreamSource;
+    updateVisuals();
+}
+
+function setLiveInput() {
+    if (isPlaying) {
+		stopPlayback();
+		return "Mic";
+    }
+	isPlaying = true;
+    getUserMedia(
+    	{
+            "audio": {
+                "mandatory": {
+                    "googEchoCancellation": "false",
+                    "googAutoGainControl": "false",
+                    "googNoiseSuppression": "false",
+                    "googHighpassFilter": "false"
+                },
+                "optional": []
+            },
+        }, gotStream);
+		
+	pitchInterval = setInterval( ()=>{
+		pitchesBuffer.calcMean();
+	}, accumulationInterval);
+	
+	return "Stop";
+
 }
 
 var bufLen = 1024;
@@ -172,6 +235,7 @@ function drawPitchGraph( elem, canvas, buf, len ){
 	canvas.moveTo(0, height);
 	canvas.lineTo(width, height);
 	canvas.strokeStyle = "black";
+	canvas.fillStyle = '#F6D565';
 	canvas.stroke();	
 
 	canvas.beginPath();
@@ -179,9 +243,14 @@ function drawPitchGraph( elem, canvas, buf, len ){
 	var dx = 0.0 + width/len;
 	var x = 1.0;
 	for (var i=0;i<len;i++) {
-		var val = (maxHz-buf[i])/maxHz*height
+		var val = (maxHz-buf[i].mean)/maxHz*height
+		var min = (maxHz-buf[i].min)/maxHz*height
+		var max = (maxHz-buf[i].max)/maxHz*height
 		canvas.moveTo(x, val);
 		canvas.lineTo(x+dx,val);
+		
+		canvas.fillRect(x, min, dx, max-min);
+		
 		x += dx;
 	}
 	canvas.stroke();	
