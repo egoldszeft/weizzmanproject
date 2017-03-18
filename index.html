@@ -4,15 +4,25 @@
 		<title>Pitch Project</title>
 	</head>
 	<body>
+		<script src="js/samplesAcc.js"></script>
 		<script src="js/pitch.js"></script>
-		<h1>Pitch Project</h1>
-		<h2>Eyal Goldszeft</h2>
+		<h1>Pitch Project - Eyal Goldszeft</h1>
 		<p>
 			<button onclick="this.innerText = setPlayback()">File</button>
 			<button>Mic</button>
 		</p>
+		<h2>Waveform</h2>
 		<div id="waveform">
 			<canvas id="wfGraph" width="700px"	height="300px" style="width:700px; height:300px"></canvas>
+		</div>
+		<h2>Frequency Domain</h2>
+		<div id="frequency">
+			<canvas id="freqGraph" width="700px"	height="300px" style="width:700px; height:300px"></canvas>
+		</div>
+		<h2>Pitch</h2>
+		<div id="pitch">
+			<h3>The current pitch is <span id="pitchValue">50</span>Hz</h3>
+			<canvas id="pitchGraph" width="700px" height="300px" style="width:700px; height:300px"></canvas>
 		</div>
 	</body>
 </html>
