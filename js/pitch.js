@@ -12,6 +12,8 @@ var lastPitch;
 var freqElem;
 var freqCanvas;
 var rafID;
+var fileLoaderElem;
+var filePlayStopElem;
 var pitchesBuffer = null;
 var pitchInterval = null;
 var accumulationInterval = 500;
@@ -21,8 +23,8 @@ window.AudioContext = window.AudioContext || window.webkitAudioContext;
 window.onload = function(){
 	
 	audioContext = new AudioContext();
+	/*
 	var request = new XMLHttpRequest();
-//	request.open("GET", "./sounds/testSound.wav", true);
 	request.open("GET", "./sounds/Scala.m4a", true);
 	request.responseType = "arraybuffer";
 	request.onload = function(){
@@ -31,6 +33,8 @@ window.onload = function(){
 		});
 	}
 	request.send();
+	*/
+
 	
 	waveElem = document.getElementById('wfGraph');
 	waveCanvas = waveElem.getContext('2d');
@@ -43,23 +47,45 @@ window.onload = function(){
 	freqCanvas = freqElem.getContext('2d');
 
 	pitchesBuffer = new samplesAccumulator();
+	
+	fileLoaderElem = document.getElementById('fileChooser');
+	filePlayStopElem = document.getElementById('stopFilePlay');
+	
+}
+
+function openFile( event )
+{
+	var input = event.target;
+	var reader = new FileReader();
+	reader.onload = function(){
+		var arraybuffer = reader.result;
+		audioContext.decodeAudioData( arraybuffer, decoded => {
+			samplesBuffer = decoded;
+			stopPlayback();
+			setPlayback(true);
+		});
+	}
+	reader.readAsArrayBuffer(input.files[0]);
 }
 
 function stopPlayback()
 {
-	if ( !( sourceNode instanceof MediaStreamAudioSourceNode ) )
-		sourceNode.stop( 0 );
-	else
-		sourceNode.disconnect();
-	
-	sourceNode = null;
-	analyser = null;
-	isPlaying = false;
-	if ( !window.cancelAnimationFrame )
-		window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
-	window.cancelAnimationFrame( rafID );
-	clearInterval(pitchInterval);	
+	if ( isPlaying ){
+		if ( !( sourceNode instanceof MediaStreamAudioSourceNode ) )
+			sourceNode.stop( 0 );
+		else
+			sourceNode.disconnect();
+		
+		sourceNode = null;
+		analyser = null;
+		isPlaying = false;
+		if ( !window.cancelAnimationFrame )
+			window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
+		window.cancelAnimationFrame( rafID );
+		clearInterval(pitchInterval);	
+	}
 }
+
 
 function setPlayback( onoff ){
 	if ( isPlaying ){

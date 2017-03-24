@@ -8,8 +8,11 @@
 		<script src="js/pitch.js"></script>
 		<h1>Pitch Project - Eyal Goldszeft</h1>
 		<p>
-			<button onclick="this.innerText = setPlayback()">Play</button>
+			<input id='fileChooser' type='file' onchange="openFile(event)"></input>
 			<button onclick="this.innerText = setLiveInput()">Mic</button>
+			<p>
+			<button id='stopFilePlay' onclick="setPlayback(false)">Stop</button>
+			</p>
 		</p>
 		<h2>Waveform</h2>
 		<div id="waveform">
