@@ -1,4 +1,4 @@
-function audioControl( params ){
+function AudioControl( params ){
 	var me = this;
 	this.isPlaying = null;
 	this.playMode = null;

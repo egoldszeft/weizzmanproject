@@ -2,7 +2,7 @@ var app = null;
 
 function Application(){
 	var me = this;
-	this.audioControl = new audioControl();	
+	this.audioControl = new AudioControl();	
 	this.mode = "file";
 	
 	this.graphs = [];	
