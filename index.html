@@ -20,6 +20,18 @@
 			<button id='stop' onclick='app.stop()'>Stop</button>
 			<button id='pause' onclick='this.innerText = app.togglePause()'>Pause</button>
 		</p>
+<!--		
+		<p>
+			High Pass
+			<input type='range' min='10' max='1000' id='highPass' value='10' oninput='app.updateHPFilter(event)'></input>
+			<input id='highPassText' onchange='app.updateHPFilter(event)' value='10'></input>
+		</p>
+-->
+		<p>
+			Low Pass
+			<input type='range' min='500' max='10000' id='lowPass' value='10000' oninput='app.updateLPFilter(event)'></input>
+			<input id='lowPassText' onchange='app.updateLPFilter(event)' value='10000'></input>
+		</p>
 		<table style="width:100%">
 			<tr>
 				<td>

@@ -3,6 +3,8 @@ function AudioControl( params ){
 	this.isPlaying = null;
 	this.playMode = null;
 	this.audioContext = new AudioContext();
+	this.lowPassFilter = null;
+	this.highPassFilter = null;
 	this.sourceNode = null;
 	this.samplesBuffer = null;
 	this.analyser = null;
@@ -10,6 +12,7 @@ function AudioControl( params ){
 	this.pitchesBuffer = new samplesAccumulator();
 	this.accumulationInterval = 500;
 	this.pitch = 0;
+	this.highFreq = params.highFreq;
 	
 	this.samplesBufLen = 1024;
 	this.samplesBuf = new Float32Array( this.samplesBufLen );
@@ -30,6 +33,33 @@ function AudioControl( params ){
 		reader.readAsArrayBuffer(input.files[0]);
 	};
 	
+	this.setupPipeline = function(source, connectOutput){
+		var sourceNode = source;
+
+		var lowPassFilter = me.audioContext.createBiquadFilter();
+		lowPassFilter.type = "lowpass";
+		lowPassFilter.frequency.value = me.highFreq;
+		sourceNode.disconnect();
+		sourceNode.connect(lowPassFilter);
+
+		var analyser = me.audioContext.createAnalyser();
+		analyser.fftSize = 2048;
+		lowPassFilter.connect(analyser);
+		
+		if ( connectOutput )
+			analyser.connect( me.audioContext.destination );
+		
+		me.sourceNode = sourceNode;
+		me.analyser = analyser;
+		me.lowPassFilter = lowPassFilter;
+	};
+	
+	this.updateLPFilter = function( high ){
+		me.highFreq = high;
+		if ( me.lowPassFilter )
+			me.lowPassFilter.frequency.value = me.highFreq;
+	}
+	
 	this.stopPlayback = function(){
 		if ( this.isPlaying ){
 			if ( !( this.sourceNode instanceof MediaStreamAudioSourceNode ) )
@@ -39,6 +69,8 @@ function AudioControl( params ){
 			
 			this.sourceNode = null;
 			this.analyser = null;
+			this.highPassFilter = null;
+			this.lowPassFilter = null;
 			this.isPlaying = false;
 			clearInterval( this.pitchInterval );
 		}
@@ -53,15 +85,9 @@ function AudioControl( params ){
 			sourceNode.buffer = this.samplesBuffer;
 			sourceNode.loop = true;
 			
-			var analyser = this.audioContext.createAnalyser();
-			analyser.fftSize = 2048;
-			sourceNode.connect( analyser );
-			analyser.connect( this.audioContext.destination );
-			sourceNode.start(0);
-			
-			this.sourceNode = sourceNode;
-			this.analyser = analyser;
-			
+			this.setupPipeline(sourceNode, true);
+			this.sourceNode.start(0);
+
 			this.isPlaying = true;
 
 			var me = this;
@@ -90,10 +116,7 @@ function AudioControl( params ){
 		me.mediaStreamSource = me.audioContext.createMediaStreamSource(stream);
 
 		// Connect it to the destination.
-		me.analyser = me.audioContext.createAnalyser();
-		me.analyser.fftSize = 2048;
-		me.mediaStreamSource.connect( me.analyser );
-		me.sourceNode = me.mediaStreamSource;
+		me.setupPipeline(me.mediaStreamSource, false);
 	};
 
 	this.setLiveInput = function() {

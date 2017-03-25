@@ -91,7 +91,7 @@ function PitchGraph( element ){
 		var width = me.element.offsetWidth;
 		var height = me.element.offsetHeight;
 		var canvas = me.canvas;
-		var maxHz = 5000;
+		var maxHz = 3000;
 		var buf = audioController.getPitchesBuffer();
 		var len = buf.length;
 		
